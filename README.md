@@ -1,6 +1,6 @@
 # sponge
 
-Compiler Subset of Scheme to BeFunge
+Compiler Subset of Scheme to BeFunge98
 
 https://helvm.github.io/sponge/sponge.html
 
