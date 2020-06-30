@@ -1,0 +1,137 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+  <title>Sponge - a Scheme to Befunge compiler</title>
+  <link rel="StyleSheet" href="../estilo.css" type="text/css">
+  <meta name="author" content="Pablo Barenbaum">
+  <meta name="keywords" content="befunge,funge,funge 98,lisp,scheme,compiler,interpreter,obfuscated,esoteric,programming language,unlambda">
+</head>
+<body>
+
+<h1>Sponge - <small>a Scheme to Befunge compiler</small></h1>
+<a href="index.html">Main</a>
+
+<p>This page holds a <a href="sponge.lisp">quick and dirty compiler</a> for a
+tiny subset of Scheme
+into <a href="http://catseye.tc/projects/funge98/">Befunge 98</a>.
+The compiler is written in (hopefully ANSI) Common Lisp.</p>
+
+<h2>Supported dialect</h2>
+
+The supported dialect of Scheme compiles the following special forms:
+
+<ul>
+<li><code>lambda</code> with proper lexical scope and closures.
+It doesn't support variadic argument lists.
+<li><code>if</code>
+<li><code>set!</code>
+<li><code>begin</code>
+<li><code>let</code>
+<li><code>letrec</code>
+</ul>
+
+The primitive operations start with an underscore and are <b>not</b>
+first class procedures (which can be easily solved with an eta expansion,
+e.g. <code>(lambda (x y) (_+ x y))</code>).
+The following datatypes are supported:
+
+<ul>
+<li>Pairs: <code>_pair?</code> <code>_cons</code> <code>_car</code> <code>_cdr</code>
+<li>Integers (with precision limited by the Befunge interpreter): <code>_integer?</code> <code>_+</code> <code>_-</code> <code>_*</code>
+<code>_/</code> <code>_%</code> <code>_=</code>
+<li>Booleans (noted <code>true</code> and <code>false</code>
+instead of <code>#t</code> and <code>#f</code>):
+<code>_boolean?</code> <code>_not</code>
+<li>Closures: <code>_procedure?</code>
+<li>Adding strings, characters and vectors should be straightforward.
+Currently the Common Lisp code is quite a mess, though.
+<li>The data is tagged, and every primitive operation checks the
+types of its arguments and issues an error message if the types
+aren't correct.
+</ul>
+
+The following are <b>misfeatures</b>:
+<ul>
+<li>No <code>call/cc</code>. However, since the compiler transforms the
+code to <a href="http://en.wikipedia.org/wiki/Continuation-passing_style">CPS</a>,
+it shouldn't be difficult to add.
+<li>No variadic arguments.
+<li>No garbage collection.
+<li>No tail call optimization.
+<li>No symbols or <code>quote</code> are supported.
+<li>No <code>define</code>... and in general no every other form not mentioned before :)
+<li>
+</ul>
+
+<h2>Compiling strategy</h2>
+
+The compilation is done in lots of phases:
+
+<ol>
+<li>Desugar <code>let</code> and <code>letrec</code> into
+<code>lambda</code> abstractions.
+<li>Convert to CPS, so it isn't necessary to keep a stack
+of return addresses (the code always calls its continuation,
+jumping forward and never returning).
+<li>Extract <code>lambda</code>s recursively, transforming them into toplevel definitions.
+<li>Produce a matrix of Befunge code from Scheme code. (This is the "real" compilation).
+<li>Print the matrix into a text file.
+</ol>
+
+Tricks used:
+
+<ul>
+<li>Befunge code is output in the following format:
+<pre>
+ main program      (row 0)
+ memory ("heap")   (row 1)
+ error handling    (row 2)
+ routine handlers  (from row 3 on)
+</pre>
+<li>The code produced is almost Unefunge code. The main program is written in the
+row 0.
+<li>The row 1 is used as RAM, using the <code>g</code> (get)
+and <code>p</code> (put) instructions. The first cells are
+used as internal registers:
+<ul>
+<li>Register 0 holds a pointer for the next free space in the heap.
+<li>Register 1 and 3 are used as auxiliary registers.
+<li>Register 2 holds the pointer to the current activation record / stack frame.
+</ul>
+<li>Every object (integers, closures, etc.) is allocated
+in the heap, and occupies at least one cell (the type tag).
+The following cells hold the real values. Objects are manipulated
+through their pointers.
+<li>The row 2 holds a predefined error "handling" routine, which
+prints an error message and exits.
+<li>To simulate jumps or gotos, the "absolute delta" (<code>x</code> instruction)
+is used. The compiler calculates the offset and hardcodes it.
+<li>The n-th routine of the program has a routine handler in the (n+3)-th row.
+When the n-th routine must be called, the caller jumps to the
+(n+3)-th row. The routine handler then jumps to the appropiate column
+of the 0-th row. This is done to avoid backpatching the offsets, since
+the position of the routine handler can be known in advance.
+</ul>
+
+<h2>The code</h2>
+
+<p><a href="sponge.lisp">Here</a> it is the compiler.
+The Scheme code to be compiled is hardcoded in the source code, and
+so is the output file. You might want to modify it to do something
+fancier such as reading the code from a file, like normal people do.</p>
+
+<p>The Befunge object code is reeeally big, but it seems to work in
+at least some examples. Please be patient when you run the
+result!</p>
+
+<p>Now writing an Unlambda to Befunge compiler should be almost
+a trivial task :)</p>
+
+Happy hacking!
+
+
+<div style="text-align:right;position:fixed;bottom:3px;right:3px;width:100%;z-index:999999;cursor:pointer;line-height:0;display:block;"><a target="_blank" href="https://www.freewebhostingarea.com" title="Free Web Hosting with PHP5 or PHP7"><img alt="Free Web Hosting" src="https://www.freewebhostingarea.com/images/poweredby.png" style="border-width: 0px;width: 180px; height: 45px; float: right;"></a></div>
+</body>
+</html>
