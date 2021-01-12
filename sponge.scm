@@ -1,5 +1,7 @@
 #lang racket
 
+;(require control)
+
 (define (fmt &rest xs)
  (apply #'format '() xs))
 
