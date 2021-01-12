@@ -1,7 +1,7 @@
 #lang racket
 
 (define (fmt &rest xs)
- (apply #'format nil xs))
+ (apply #'format '() xs))
 
 (define (out-repeat port n s)
   (dotimes (i n)
