@@ -12,11 +12,11 @@
 
 ;;
 
-(define-simple-macro rec (name args . body)
+(define-simple-macro (rec name args . body)
  `(labels ((,name ,args ,@body))
     (,name ,@args)))
 
-(define-simple-macro => (x . forms)
+(define-simple-macro (=> x . forms)
  (rec aux (x forms)
     (if (null forms)
       x
@@ -301,7 +301,7 @@
 (defvar *unspecified-tag*  3)
 (defvar *boolean-tag*      4)
 
-(define-simple-macro defbuiltin (name arity &rest rest)
+(define-simple-macro (defbuiltin name arity &rest rest)
   `(push (list ',name ,arity #'(lambda ,@rest))
          *builtins*))
 
@@ -355,7 +355,7 @@
      cs
      (bf-create-vector 2 cs)))))
 
-(define-simple-macro defoperator (name operation args result)
+(define-simple-macro (defoperator name operation args result)
  (let ((gexpr (gensym))
        (gcs (gensym))
        (n 0))
@@ -377,7 +377,7 @@
 (defoperator _not "!" (*boolean-tag*) *boolean-tag*)
 (defoperator _= "-!" (*integer-tag* *integer-tag*) *boolean-tag*)
 
-(define-simple-macro defpredicate (name tag)
+(define-simple-macro (defpredicate name tag)
  (with-gensyms ("" ge gc)
   `(defbuiltin ,name 1 (,ge ,gc)
      (=> ,gc
