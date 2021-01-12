@@ -31,7 +31,7 @@
   ((< n 0) (fmt "0~A-" (bf-num (- n))))
   ((<= n 9) (fmt "~A" n))
   (#t (fmt "~Aa*~A+" (bf-num (floor n 10))
-                    (mod n 10)))))
+                    (modulo n 10)))))
 
 ;;; implemented Lisp:
 ;;;
