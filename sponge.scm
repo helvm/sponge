@@ -583,7 +583,7 @@
   ; else
   (t (assert (not "unimplemented type of constant")))))
 
-(define comp1-seq (exprs env)
+(define (comp1-seq exprs env)
  (mapcar #'(lambda (e) (comp1 e env)) exprs))
 
 (define (each=> f list x)
