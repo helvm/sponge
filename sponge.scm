@@ -68,9 +68,9 @@
 ;;;   take care of returns)
 ;;;
 
-(defvar *heap-offset*             1)
-(defvar *routine-offset*          2)
-(defvar *error-handler-position*  '(2 . 0))
+(define *heap-offset*             1)
+(define *routine-offset*          2)
+(define *error-handler-position*  '(2 . 0))
 
 (defstruct compiler-state
   ;; program keeps the befunge code in a list of pairs (position . string)
@@ -287,19 +287,19 @@
 
 ;;;; Compiler
 
-(defvar *toplevel-forms* '())
+(define *toplevel-forms* '())
 
 (let ((c 0))
  (define make-id ()
   (incf c)))
 
-(defvar *builtins* '())
+(define *builtins* '())
 
-(defvar *function-tag*     0)
-(defvar *cons-tag*         1)
-(defvar *integer-tag*      2)
-(defvar *unspecified-tag*  3)
-(defvar *boolean-tag*      4)
+(define *function-tag*     0)
+(define *cons-tag*         1)
+(define *integer-tag*      2)
+(define *unspecified-tag*  3)
+(define *boolean-tag*      4)
 
 (define-simple-macro (defbuiltin name arity &rest rest)
   `(push (list ',name ,arity #'(lambda ,@rest))
