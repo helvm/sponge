@@ -5,9 +5,9 @@
 (define (fmt &rest xs)
  (apply #'format '() xs))
 
-(define (out-repeat port n s)
-  (dotimes (i n)
-    (format port s)))
+;(define (out-repeat port n s)
+;  (dotimes (i n)
+;    (format port s)))
 
 ;;
 
