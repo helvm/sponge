@@ -1,8 +1,9 @@
+#lang racket
 
-(define fmt (&rest xs)
+(define (fmt &rest xs)
  (apply #'format nil xs))
 
-(define out-repeat (port n s)
+(define (out-repeat port n s)
   (dotimes (i n)
     (format port s)))
 
@@ -22,7 +23,7 @@
 ;;; numbers in befunge
 ;;; (in decimal fashion)
 
-(define bf-num (n)
+(define (bf-num n)
  (cond
   ((< n 0) (fmt "0~A-" (bf-num (- n))))
   ((<= n 9) (fmt "~A" n))
@@ -78,7 +79,7 @@
   ;; pos tracks the last occupied cell in the main program
   (pos '(0 . 0)))
 
-(define produce (str cs)
+(define (produce str cs)
   (make-compiler-state
     :program (acons (compiler-state-pos cs) str
                     (compiler-state-program cs))
@@ -86,15 +87,15 @@
            (car (compiler-state-pos cs))
            (+ (length str) (cdr (compiler-state-pos cs))))))
 
-(define bf-jump-driver (y0 x0 y1 x1)
+(define (bf-jump-driver y0 x0 y1 x1)
   (fmt "<x~A~A"
        (reverse (bf-num (- y1 y0)))
        (reverse (bf-num (- x1 x0 1)))))
 
-(define pos-for-id (num)
+(define (pos-for-id num)
  (cons (+ num *routine-offset*) 0))
 
-(define define-function (num cs)
+(define (define-function num cs)
  (let ((p (pos-for-id num))
        (cp (compiler-state-pos cs)))
   (make-compiler-state
@@ -106,7 +107,7 @@
 
 ;;; =~ malloc
 ;;; leaves the address of the allocated vector in the stack
-(define bf-allocate (size cs)
+(define (bf-allocate size cs)
  ; increase register 0 by size
  (produce
    (fmt "0~Ag:~A+0~Ap"
@@ -119,7 +120,7 @@
 ;;; and fills it with the n top elements in
 ;;; the stack. (the top of the stack goes last).
 ;;; leaves the address in the stack
-(define bf-create-vector (n cs)
+(define (bf-create-vector n cs)
  (=> cs
   ; allocate memory
   (bf-allocate n)
@@ -140,18 +141,18 @@
   (produce (fmt "1~Ag" *heap-offset*))))
 
 ;;; pushes i-th element of the vector at the top of the stack
-(define bf-vector-ref (i cs)
+(define (bf-vector-ref i cs)
   ; dereference memory
   (produce (fmt "~A+~Ag" (bf-num i) (bf-num *heap-offset*))
            cs))
 
 ;;; sets the i-th element of the vector to the value
 ;;; at the top of the stack
-(define bf-vector-set (i cs)
+(define (bf-vector-set i cs)
   (produce (fmt "\\~A+~Ap" (bf-num i) (bf-num *heap-offset*))
            cs))
 
-(define bf-jump (y0 x0)
+(define (bf-jump y0 x0)
   (fmt ">#x;# \\-~A0-~A+~A;# <"
        (reverse (bf-num (+ x0 2)))
        (reverse (bf-num y0))
@@ -159,13 +160,13 @@
 
 ;;; compiles the function and arguments, and the
 ;;; necessary code for the invocation
-(define call-function (func args n-args cs)
+(define (call-function func args n-args cs)
   (=> cs
       (comp2-args args)            ; compile the arguments
       (comp2-expr func)            ; compile the function
       (invoke-function n-args)))
 
-(define invoke-function (n-args cs)
+(define (invoke-function n-args cs)
   (let ((cs
     (=> cs
        (produce ":")
@@ -182,31 +183,31 @@
 
 ;;; constructors for Scheme objects
 
-(define create-function (num cs)
+(define (create-function num cs)
  (=> cs
    (produce (bf-num *function-tag*))    ; TAG
    (produce (bf-num num))               ; function-code
    (produce (fmt "2~Ag" *heap-offset*)) ; current env
    (bf-create-vector 3)))
 
-(define push-number (n cs)
+(define (push-number n cs)
  (=> cs
    (produce (bf-num *integer-tag*))     ; TAG
    (produce (bf-num n))                 ; value
    (bf-create-vector 2)))
 
-(define make-number (cs)
+(define (make-number cs)
  (=> cs
    (produce (bf-num *integer-tag*))     ; TAG
    (produce "\\")                       ; take value
    (bf-create-vector 2)))
 
-(define push-unspecified (cs)
+(define (push-unspecified cs)
  (=> cs
    (produce (bf-num *unspecified-tag*)) ; TAG
    (bf-create-vector 1)))
 
-(define push-boolean (v cs)
+(define (push-boolean v cs)
  (=> cs
    (produce (bf-num *boolean-tag*))     ; TAG
    (produce (bf-num (if v 1 0)))
@@ -216,7 +217,7 @@
 ;;; bound by `name' in the given environment.
 ;;; the current environment is at register 2
 
-(define local-ref-base-offset (env name cs)
+(define (local-ref-base-offset env name cs)
   (if (null env)
     (assert (not "unbound variable"))
     (let ((p (position name (car env))))
@@ -227,12 +228,12 @@
            (bf-vector-ref l) ; pointer to next
            (local-ref-base-offset (cdr env) name)))))))
 
-(define local-ref (env name cs)
+(define (local-ref env name cs)
  (=> cs
    (produce (fmt "2~Ag" *heap-offset*)) ; current env
    (local-ref-base-offset env name)))
 
-(define local-set-base-offset (env name value cs)
+(define (local-set-base-offset env name value cs)
   (if (null env)
     (assert (not "unbound variable"))
     (let ((p (position name (car env))))
@@ -245,7 +246,7 @@
            (bf-vector-ref l) ; pointer to next
            (local-set-base-offset (cdr env) name value)))))))
 
-(define local-set (env name value cs)
+(define (local-set env name value cs)
  (=> cs
    (produce (fmt "2~Ag" *heap-offset*)) ; current env
    (local-set-base-offset env name value)
@@ -254,12 +255,12 @@
 ;; Output
 ;; - emit befunge code to a file, from a list representation
 
-(define pos-< (x y)
+(define (pos-< x y)
   (or (< (car x) (car y))
       (and (= (car x) (car y))
            (< (cdr x) (cdr y)))))
 
-(define print-program (cs &optional (port t))
+(define (print-program cs &optional (port t))
  (let ((instructions
          (sort
             (compiler-state-program cs)
@@ -308,7 +309,7 @@
     (bf-vector-ref 1)
     (produce ".")))
 
-(define check-tag (tag cs)
+(define (check-tag tag cs)
   (let ((cs
           (=> cs
               (produce ":")
@@ -323,7 +324,7 @@
                     (reverse (bf-num dx)))
                cs))))
 
-(define bf-tagged (tag cs)
+(define (bf-tagged tag cs)
   (=> cs
       (bf-vector-ref 0)
       (produce (bf-num tag))
@@ -332,7 +333,7 @@
       (produce "\\")
       (bf-create-vector 2)))
 
-(define operator (operation elems result-tag cs)
+(define (operator operation elems result-tag cs)
  (let ((cs (if (eq result-tag t)
              cs
              (produce (bf-num result-tag) cs))))
@@ -408,7 +409,7 @@
 ;;; desugar:
 ;;; - convert (let ...) and (letrec ...) to lambdas
 
-(define desugar (expr)
+(define (desugar expr)
   (cond
     ((consp expr)
      (case (car expr)
@@ -520,10 +521,10 @@
 ;;;
 ;;; - check arities of special forms and builtins
 
-(define valid-constant-p (x)
+(define (valid-constant-p x)
   (numberp x))
 
-(define comp1 (expr env)
+(define (comp1 expr env)
  (cond
   ((consp expr)
    (if (assoc (car expr) *builtins*)
@@ -585,25 +586,25 @@
 (define comp1-seq (exprs env)
  (mapcar #'(lambda (e) (comp1 e env)) exprs))
 
-(define each=> (f list x)
+(define (each=> f list x)
  (if (null list)
    x
    (=> x
      (funcall f (car list))
      (each=> f (cdr list)))))
 
-(define env-empty ()
+(define (env-empty )
  '())
 
-(define env-extend (env names)
+(define (env-extend env names)
  (cons names env))
 
 ;;; comp2:
 ;;; - produce befunge code in list representation
-(define comp2 (exprs cs)
+(define (comp2 exprs cs)
  (comp2-progn exprs cs))
 
-(define comp2-progn (exprs cs)
+(define (comp2-progn exprs cs)
  (=> cs
    (comp2-expr (car exprs))
    (each=>
@@ -613,10 +614,10 @@
              (comp2-expr e)))
      (cdr exprs))))
 
-(define comp2-args (exprs cs)
+(define (comp2-args exprs cs)
   (each=> #'comp2-expr exprs cs))
 
-(define comp2-expr (expr cs)
+(define (comp2-expr expr cs)
   ;(princ expr) (terpri)
   (cond
     ((consp expr)
@@ -688,7 +689,7 @@
     (t (format t "~A~%" expr)
        (assert (not "unimplemented type of constant")))))
 
-(define comp (expr)
+(define (comp expr)
  (let ((expr (cps (desugar expr))))
   (pprint expr)
   (let ((main-expr (comp1 expr (env-empty))))
@@ -696,11 +697,11 @@
       (cons `(%main ,main-expr) *toplevel-forms*)
         (make-compiler-state)))))
 
-(define sponge-compile* (output-file code)
+(define (sponge-compile* output-file code)
   (with-open-file (f output-file :direction :output)
     (print-program (comp code) f)))
 
-(defmacro sponge-compile (output-file code)
+(defmacro (sponge-compile output-file code)
   `(sponge-compile* ,output-file ',code))
       
 
