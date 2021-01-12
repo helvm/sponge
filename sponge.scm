@@ -30,13 +30,13 @@
  (cond
   ((< n 0) (fmt "0~A-" (bf-num (- n))))
   ((<= n 9) (fmt "~A" n))
-  (t (fmt "~Aa*~A+" (bf-num (floor n 10))
+  (#t (fmt "~Aa*~A+" (bf-num (floor n 10))
                     (mod n 10)))))
 
 ;;; implemented Lisp:
 ;;;
 ;;; - integers (limited by the befunge implementation)
-;;; - booleans: true, false (not #t and #f)
+;;; - booleans: true, false (not ##t and #f)
 ;;; - lambda, if, set!, begin
 ;;; - functions with variadic arguments are not supported
 ;;;
@@ -263,7 +263,7 @@
       (and (= (car x) (car y))
            (< (cdr x) (cdr y)))))
 
-(define (print-program cs &optional (port t))
+(define (print-program cs &optional (port #t))
  (let ((instructions
          (sort
             (compiler-state-program cs)
@@ -337,7 +337,7 @@
       (bf-create-vector 2)))
 
 (define (operator operation elems result-tag cs)
- (let ((cs (if (eq result-tag t)
+ (let ((cs (if (eq result-tag #t)
              cs
              (produce (bf-num result-tag) cs))))
   (let ((cs
@@ -345,13 +345,13 @@
               (each=>
                 #'(lambda (x cs)
                     (let ((cs (comp2-expr (second x) cs)))
-                      (let ((cs (if (eq (first x) t)
+                      (let ((cs (if (eq (first x) #t)
                                   cs
                                   (check-tag (first x) cs))))
                         (bf-vector-ref 1 cs))))
                 elems)
               (produce operation))))
-   (if (eq result-tag t)
+   (if (eq result-tag #t)
      cs
      (bf-create-vector 2 cs)))))
 
@@ -425,8 +425,8 @@
         `((lambda ,(mapcar #'first (second expr))
             ,@(mapcar #'desugar (cddr expr)))
           ,@(mapcar #'desugar (mapcar #'second (second expr)))))
-       (t (mapcar #'desugar expr))))
-    (t expr)))
+       (#t (mapcar #'desugar expr))))
+    (#t expr)))
 
 
 ;;; convert an expression to CPS
@@ -509,8 +509,8 @@
                          (cpsify (fourth expr))
                          (cpsify 0)) ,k))))))
 
-           (t (cpsify-application expr)))))
-      (t `(lambda (,k) (,k ,expr)))))
+           (#t (cpsify-application expr)))))
+      (#t `(lambda (,k) (,k ,expr)))))
   
   (define cps (expr)
    `(,(cpsify expr) (lambda (x) x))))
@@ -572,7 +572,7 @@
               ,(comp1 (list 'lambda '() (fourth expr)) env)))
 
        ; else (application)
-       (t (comp1-seq expr env)))))
+       (#t (comp1-seq expr env)))))
 
   ; variables
   ((symbolp expr)
@@ -584,7 +584,7 @@
   ((valid-constant-p expr) expr)
 
   ; else
-  (t (assert (not "unimplemented type of constant")))))
+  (#t (assert (not "unimplemented type of constant")))))
 
 (define (comp1-seq exprs env)
  (mapcar #'(lambda (e) (comp1 e env)) exprs))
@@ -682,14 +682,14 @@
          ((%boolean-constant)
           (push-boolean (second expr) cs))
          ; else (application)
-         (t
+         (#t
            (=> cs
                (call-function (car expr) (cdr expr) (length (cdr expr)))))
          )))
     ((numberp expr)
      (push-number expr cs))
     ; else (constant)
-    (t (format t "~A~%" expr)
+    (#t (format #t "~A~%" expr)
        (assert (not "unimplemented type of constant")))))
 
 (define (comp expr)
